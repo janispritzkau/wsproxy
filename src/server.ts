@@ -23,7 +23,7 @@ wss.on("connection", async (ws, { connection }) => {
             console.log(`[Redirect] ${remoteAddress} -> ${host}:${port}`)
 
             return socket = connect({ host, port }, () => {
-                socket.on("data", data => ws.send(data))
+                socket.on("data", data => ws.readyState <= 1 && ws.send(data))
                 socket.on("end", () => ws.close())
                 ws.onclose = () => {
                     socket.end()
