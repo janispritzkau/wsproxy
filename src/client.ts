@@ -4,7 +4,7 @@ import { createServer } from "net"
 const config = {
     "host": null,
     "port": null,
-    "local-port": "9696",
+    "local-port": null,
     "ws": "wss://localhost:8080"
 }
 
@@ -17,13 +17,13 @@ for (let arg of process.argv.slice(2)) {
         console.error(`Unknown option '--${opt}'`), process.exit(1)
 }
 if (opt) console.error(`Missing argument value '--${opt} <value>'`), process.exit(1)
-if (!opt.host) console.error("--host is not specified!")
-if (!opt.port) console.error("--port is not specified!")
+if (!config.host) console.error("--host is not specified!")
+if (!config.port) console.error("--port is not specified!")
 
 const ADDRESS = config.ws
 const HOST = config.host
 const PORT = parseInt(config.port)
-const LOCAL_PORT = parseInt(config["local-port"])
+const LOCAL_PORT = config["local-port"] ? parseInt(config["local-port"]) : PORT
 
 createServer(socket => {
     const ws = new WebSocket(ADDRESS, { rejectUnauthorized: false })
