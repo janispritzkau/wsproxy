@@ -1,0 +1,65 @@
+#!/usr/bin/env node
+const { version, name } = require("../package.json")
+const fs = require("fs")
+
+const help = `${name} v${version}\n
+Usage:
+  - ${name} server --port 8080
+  - ${name} server --ssl --cert cert.pem --key key.pem
+  - ${name} client ws://localhost:8080 -p 9696
+  - ${name} client wss://domain.com
+
+${name} client <websocket-url> [options]
+  --port, -p       Local port
+
+${name} server [options]
+  --port, -p       Port to listen on
+  --ssl            Enable SSL (https)
+  --cert, -c       SSL certificate
+  --key, -k        SLL private key
+`
+
+const showHelp = () => (console.log(help), process.exit(1))
+const args = process.argv.slice(3), command = process.argv[2]
+
+switch (command) {
+    case "server": {
+        const [ config ] = parseArgs(args, { port: "p", cert: "c", key: "k" })
+        const runServer = require("../lib/server").default
+        console.log("Starting server")
+        runServer(config.port || (config.ssl ? 443 : 80), config.ssl && {
+            cert: fs.readFileSync(config.cert || "cert.pem"),
+            key: fs.readFileSync(config.key || "key.pem")
+        })
+        break
+    }
+    case "client": {
+        const [ config, [ address ] ] = parseArgs(args, { port: "p" })
+        if (!address) showHelp()
+        const runClient = require("../lib/client").default
+        console.log("Starting client")
+        runClient(address, config.port || 9696)
+        break
+    }
+    default: console.log(help)
+}
+
+function parseArgs(args, aliases = {}) {
+    const opts = {}, rest = []
+    let opt = null
+    for (let arg of args) if (arg.startsWith("-") && arg.length >= 2) {
+        if (opt) opts[opt] = true
+        opt = arg.startsWith("--") ? arg.slice(2) : arg[1]
+    } else if (opt) opts[opt] = arg, opt = null
+    else rest.push(arg)
+    if (opt) opts[opt] = true
+    const config = {}
+    a: for (let [opt, val] of Object.entries(opts)) {
+        for (let [k, v] of Object.entries(aliases)) if (v.includes(opt)) {
+            config[k] = val
+            continue a
+        }
+        config[opt] = val
+    }
+    return [config, rest]
+}
