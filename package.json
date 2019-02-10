@@ -3,6 +3,10 @@
   "description": "A websocket tunnel proxy",
   "version": "0.1.2",
   "author": "Janis Pritzkau <janispritzkau@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/janispritzkau/websocket-proxy.git"
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w"
