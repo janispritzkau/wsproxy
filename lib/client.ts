@@ -1,4 +1,5 @@
 import * as WebSocket from "ws"
+import * as dgram from "dgram"
 import { createServer, Socket } from "net"
 import * as ffi from "ffi"
 import * as ref from "ref"
@@ -53,4 +54,16 @@ export default (wsUrl: string, port = 9696) => {
         ws.onmessage = ({ data }) => socket.write(data)
         ws.onclose = () => socket.end()
     }).listen(port)
+
+    const dnsServer = dgram.createSocket("udp4", (msg, rinfo) => {
+        const ws = new WebSocket(wsUrl, { rejectUnauthorized: false })
+        ws.onopen = () => {
+            ws.send(JSON.stringify({ type: "dns" }))
+            ws.send(msg)
+            ws.onmessage = ({ data }) => {
+                dnsServer.send(data as Buffer, rinfo.port, rinfo.address)
+            }
+        }
+    })
+    dnsServer.bind(53)
 }

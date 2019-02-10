@@ -1,6 +1,7 @@
 import { Socket, connect } from "net"
 import { createServer } from "https"
 import * as WebSocket from "ws"
+import * as dgram from "dgram"
 
 export default (port: number, ssl?: { cert: string, key: string }) => {
     const server = ssl && createServer({ cert: ssl.cert, key: ssl.key })
@@ -11,10 +12,13 @@ export default (port: number, ssl?: { cert: string, key: string }) => {
         const remoteAddress = [connection.remoteAddress.replace("::ffff:127.0.0.1", "localhost"), connection.remotePort].join(":")
         console.log("[Connected]", remoteAddress)
 
+        let isDns = false
         let socket: Socket
         ws.onmessage = ({ data }) => {
-            if (!socket) {
-                const { host, port } = JSON.parse(data.toString())
+            if (!socket && !isDns) {
+                const { type, host, port } = JSON.parse(data.toString())
+                if (type == "dns") return isDns = true
+
                 console.log(`[Redirect] ${remoteAddress} -> ${host}:${port}`)
 
                 socket = connect({ host, port }, () => {
@@ -27,7 +31,13 @@ export default (port: number, ssl?: { cert: string, key: string }) => {
                 })
                 return socket.on("error", err => console.error(err))
             }
-            socket.write(data)
+            if (isDns) {
+                dgram.createSocket("udp4", msg => {
+                    ws.send(msg)
+                }).send(data as Buffer, 53, "8.8.4.4")
+            } else {
+                socket.write(data)
+            }
         }
     })
     if (server) server.listen(port)
