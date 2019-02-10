@@ -32,18 +32,23 @@ export default (wsUrl: string, port = 9696) => {
     createServer(socket => {
         const [host, port] = getOriginalDest(socket)
 
+
         const ws = new WebSocket(wsUrl, { rejectUnauthorized: false })
         const msgs = []
 
         ws.onopen = () => {
             ws.send(JSON.stringify({ host, port }))
+            console.log(`[Connected] ${host}:${port}`)
             for (let data of msgs) ws.send(data)
         }
         ws.onerror = err => console.error("Proxy connection error")
 
         socket.on("error", err => console.error(err.message))
         socket.on("data", data => ws.readyState == 1 ? ws.send(data) : msgs.push(data))
-        socket.on("end", () => ws.close())
+        socket.on("end", () => {
+            ws.close()
+            console.log(`[Disconnected] ${host}:${port}`)
+        })
 
         ws.onmessage = ({ data }) => socket.write(data)
         ws.onclose = () => socket.end()
