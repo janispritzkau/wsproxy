@@ -1,18 +1,18 @@
 #!/usr/bin/env node
-const { version, name } = require("../package.json")
+const { version } = require("../package.json")
 const fs = require("fs")
 
-const help = `${name} v${version}\n
+const help = `wsproxy v${version}\n
 Usage:
-  - ${name} server --port 8080
-  - ${name} server --ssl --cert cert.pem --key key.pem
-  - ${name} client ws://localhost:8080 -p 9696
-  - ${name} client wss://domain.com
+  - wsproxy server --port 8080
+  - wsproxy server --ssl --cert cert.pem --key key.pem
+  - wsproxy client ws://localhost:8080 -p 9696
+  - wsproxy client wss://domain.com
 
-${name} client <websocket-url> [options]
+wsproxy client <websocket-url> [options]
   --port, -p       Local port
 
-${name} server [options]
+wsproxy server [options]
   --port, -p       Port to listen on
   --ssl            Enable SSL (https)
   --cert, -c       SSL certificate

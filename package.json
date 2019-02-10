@@ -1,12 +1,11 @@
 {
-  "name": "wsproxy",
-  "version": "0.1.0",
+  "name": "@janispritzkau/wsproxy",
+  "description": "A websocket tunnel proxy",
+  "version": "0.1.2",
   "author": "Janis Pritzkau <janispritzkau@gmail.com>",
-  "private": true,
   "scripts": {
     "build": "tsc",
-    "server": "node lib/server",
-    "client": "node lib/client"
+    "watch": "tsc -w"
   },
   "bin": "./bin/wsproxy",
   "dependencies": {
@@ -23,5 +22,6 @@
     "@types/ws": "^6.0.1",
     "ts-node": "^8.0.2",
     "typescript": "^3.3.3"
-  }
+  },
+  "license": "MIT"
 }
