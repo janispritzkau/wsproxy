@@ -32,9 +32,18 @@ export default (port: number, ssl?: { cert: string, key: string }) => {
                 return socket.on("error", err => console.error(err))
             }
             if (isDns) {
+                let msg = Buffer.from(data as any)
+                let parts = [], offset = 12, len = 0
+                while (true) {
+                    len = msg.readUInt8(offset), offset++
+                    if (len == 0) break
+                    parts.push(msg.slice(offset, offset + len).toString()), offset += len
+                }
+                console.log("[DNS]", parts.join("."))
                 dgram.createSocket("udp4", msg => {
                     ws.send(msg)
-                }).send(data as Buffer, 53, "8.8.4.4")
+                    ws.close()
+                }).send(msg, 53, "8.8.8.8")
             } else {
                 socket.write(data)
             }

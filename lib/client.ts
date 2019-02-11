@@ -51,7 +51,7 @@ export default (wsUrl: string, port = 9696) => {
             console.log(`[Disconnected] ${host}:${port}`)
         })
 
-        ws.onmessage = ({ data }) => socket.write(data)
+        ws.onmessage = ({ data }) => socket.writable && socket.write(data)
         ws.onclose = () => socket.end()
     }).listen(port)
 
@@ -59,6 +59,13 @@ export default (wsUrl: string, port = 9696) => {
         const ws = new WebSocket(wsUrl, { rejectUnauthorized: false })
         ws.onopen = () => {
             ws.send(JSON.stringify({ type: "dns" }))
+            let parts = [], offset = 12, len = 0
+            while (true) {
+                len = msg.readUInt8(offset), offset++
+                if (len == 0) break
+                parts.push(msg.slice(offset, offset + len).toString()), offset += len
+            }
+            console.log("[DNS]", parts.join("."))
             ws.send(msg)
             ws.onmessage = ({ data }) => {
                 dnsServer.send(data as Buffer, rinfo.port, rinfo.address)
