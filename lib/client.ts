@@ -4,6 +4,7 @@ import { createServer, Socket } from "net"
 import * as ffi from "ffi"
 import * as ref from "ref"
 import * as Struct from "ref-struct"
+import * as dns from "dns"
 
 const lib = ffi.Library(null, {
     'getsockopt': [ 'int', [ 'int', 'int', 'int', 'pointer', 'pointer']],
@@ -29,12 +30,16 @@ function getOriginalDest(socket: Socket) {
     return [ipaddr, lib.ntohs(dst.sin_port)]
 }
 
-export default (wsUrl: string, port = 9696) => {
+export default async (wsUrl: string, port = 9696) => {
+    const wsIP = await new Promise<string>((res, rej) => dns.lookup(wsUrl, (err, address) => {
+        if (err) return rej(err)
+        res(address)
+    }))
+
     createServer(socket => {
         const [host, port] = getOriginalDest(socket)
 
-
-        const ws = new WebSocket(wsUrl, { rejectUnauthorized: false })
+        const ws = new WebSocket(wsIP, { rejectUnauthorized: false })
         const msgs = []
 
         ws.onopen = () => {
@@ -56,7 +61,7 @@ export default (wsUrl: string, port = 9696) => {
     }).listen(port)
 
     const dnsServer = dgram.createSocket("udp4", (msg, rinfo) => {
-        const ws = new WebSocket(wsUrl, { rejectUnauthorized: false })
+        const ws = new WebSocket(wsIP, { rejectUnauthorized: false })
         ws.onopen = () => {
             ws.send(JSON.stringify({ type: "dns" }))
             let parts = [], offset = 12, len = 0
@@ -72,5 +77,6 @@ export default (wsUrl: string, port = 9696) => {
             }
         }
     })
-    dnsServer.bind(53)
+    const ws = new WebSocket(wsIP, { rejectUnauthorized: false })
+    ws.onopen = () => (dnsServer.bind(53), ws.close())
 }
