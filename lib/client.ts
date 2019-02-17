@@ -1,6 +1,7 @@
 import * as WebSocket from "ws"
 import * as dgram from "dgram"
 import { createServer, Socket } from "net"
+import { parse as parseUrl, format as formatUrl } from "url"
 import * as ffi from "ffi"
 import * as ref from "ref"
 import * as Struct from "ref-struct"
@@ -31,15 +32,18 @@ function getOriginalDest(socket: Socket) {
 }
 
 export default async (wsUrl: string, port = 9696) => {
-    const wsIP = await new Promise<string>((res, rej) => dns.lookup(wsUrl, (err, address) => {
+    const url = parseUrl(wsUrl)
+    const wsIP = await new Promise<string>((res, rej) => dns.lookup(url.hostname, (err, address) => {
         if (err) return rej(err)
         res(address)
     }))
+    wsUrl = formatUrl({ hostname: wsIP, port: url.port, pathname: url.pathname, protocol: url.protocol, slashes: true })
+    console.log(wsUrl)
 
     createServer(socket => {
         const [host, port] = getOriginalDest(socket)
 
-        const ws = new WebSocket(wsIP, { rejectUnauthorized: false })
+        const ws = new WebSocket(wsUrl, { rejectUnauthorized: false })
         const msgs = []
 
         ws.onopen = () => {
@@ -61,7 +65,7 @@ export default async (wsUrl: string, port = 9696) => {
     }).listen(port)
 
     const dnsServer = dgram.createSocket("udp4", (msg, rinfo) => {
-        const ws = new WebSocket(wsIP, { rejectUnauthorized: false })
+        const ws = new WebSocket(wsUrl, { rejectUnauthorized: false })
         ws.onopen = () => {
             ws.send(JSON.stringify({ type: "dns" }))
             let parts = [], offset = 12, len = 0
@@ -77,6 +81,6 @@ export default async (wsUrl: string, port = 9696) => {
             }
         }
     })
-    const ws = new WebSocket(wsIP, { rejectUnauthorized: false })
-    ws.onopen = () => (dnsServer.bind(53), ws.close())
+    const ws = new WebSocket(wsUrl, { rejectUnauthorized: false })
+    ws.onopen = () => (dnsServer.bind(53, "127.0.0.1"), ws.close())
 }
