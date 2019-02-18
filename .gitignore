@@ -1,8 +1,8 @@
 node_modules/
-cert.pem
-key.pem
-.vscode
-
+/build/
 lib/*.js
 
-/build/
+.vscode
+cert.pem
+key.pem
+
