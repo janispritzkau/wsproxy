@@ -1,12 +1,17 @@
 {
   "name": "@janispritzkau/wsproxy",
   "description": "A websocket tunnel proxy",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "author": "Janis Pritzkau <janispritzkau@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://gitlab.com/janispritzkau/websocket-proxy.git"
   },
+  "keywords": [
+    "proxy",
+    "websocket",
+    "tunnel"
+  ],
   "scripts": {
     "install": "node-gyp rebuild",
     "prepare": "tsc"
