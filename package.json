@@ -1,30 +1,23 @@
 {
   "name": "@janispritzkau/wsproxy",
   "description": "A websocket tunnel proxy",
-  "version": "0.1.7",
+  "version": "0.2.2",
   "author": "Janis Pritzkau <janispritzkau@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://gitlab.com/janispritzkau/websocket-proxy.git"
   },
   "scripts": {
+    "install": "node-gyp rebuild",
     "build": "tsc",
     "watch": "tsc -w"
   },
   "bin": "./bin/wsproxy",
   "dependencies": {
-    "ffi": "^2.3.0",
-    "ref": "^1.3.5",
-    "ref-struct": "^1.1.0",
     "ws": "^6.1.3"
   },
   "devDependencies": {
-    "@types/ffi": "^0.2.1",
-    "@types/node": "^10.12.23",
-    "@types/ref": "0.0.28",
-    "@types/ref-struct": "0.0.29",
     "@types/ws": "^6.0.1",
-    "ts-node": "^8.0.2",
     "typescript": "^3.3.3"
   },
   "license": "MIT"

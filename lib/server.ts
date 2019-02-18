@@ -1,51 +1,61 @@
 import { Socket, connect } from "net"
 import { createServer } from "https"
 import * as WebSocket from "ws"
-import * as dgram from "dgram"
+import { encodePacket, log } from "./utils"
 
 export default (port: number, ssl?: { cert: string, key: string }) => {
     const server = ssl && createServer({ cert: ssl.cert, key: ssl.key })
 
     const wss = ssl ? new WebSocket.Server({ server }) : new WebSocket.Server({ port })
 
-    wss.on("connection", async (ws, { connection }) => {
-        const remoteAddress = [connection.remoteAddress.replace("::ffff:127.0.0.1", "localhost"), connection.remotePort].join(":")
-        console.log("[Connected]", remoteAddress)
+    let nextConnectionId = 0
 
-        let isDns = false
-        let socket: Socket
+    wss.on("connection", async (ws, { connection: conn }) => {
+        let sockets: Map<number, Socket> = new Map
+
+        let proxyHost = `${conn.remoteAddress}:${conn.remotePort}`
+        let connectionId = nextConnectionId++
+
+        log("proxy connect", `${connectionId} ${proxyHost}`)
+
+        ws.onclose = () => {
+            sockets.forEach(socket => socket.end())
+            sockets.clear()
+            log("proxy disconnect", `${connectionId} ${proxyHost}`)
+        }
+
         ws.onmessage = ({ data }) => {
-            if (!socket && !isDns) {
-                const { type, host, port } = JSON.parse(data.toString())
-                if (type == "dns") return isDns = true
+            if (!(data instanceof Buffer)) return
 
-                console.log(`[Redirect] ${remoteAddress} -> ${host}:${port}`)
+            const type = data.readUInt8(0)
+            const id = data.readUInt8(1)
 
-                socket = connect({ host, port }, () => {
-                    socket.on("data", data => ws.readyState == 1 && ws.send(data))
-                    socket.on("end", () => ws.close())
-                    ws.onclose = () => {
-                        socket.end()
-                        console.log("[Disconnected]", remoteAddress)
-                    }
+            if (type == 0) {
+                const port = data.readUInt16LE(2)
+                const host = data.toString("ascii", 4)
+
+                log("connecting", `${connectionId} ${host}:${port}`)
+
+                const socket = connect({ host, port })
+                sockets.set(id, socket)
+
+                socket.on("close", () => {
+                    if (!sockets.has(id)) return
+                    ws.send(encodePacket(1, id))
+                    sockets.delete(id)
+                    log("disconnect", `${connectionId} ${host}:${port}`)
                 })
-                return socket.on("error", err => console.error(err))
-            }
-            if (isDns) {
-                let msg = Buffer.from(data as any)
-                let parts = [], offset = 12, len = 0
-                while (true) {
-                    len = msg.readUInt8(offset), offset++
-                    if (len == 0) break
-                    parts.push(msg.slice(offset, offset + len).toString()), offset += len
-                }
-                console.log("[DNS]", parts.join("."))
-                dgram.createSocket("udp4", msg => {
-                    ws.send(msg)
-                    ws.close()
-                }).send(msg, 53, "8.8.8.8")
-            } else {
-                socket.write(data)
+
+                socket.on("data", data => ws.send(encodePacket(2, id, data)))
+                socket.on("error", err => log("error", `${connectionId} ${err.message}`))
+            } else if (type == 1) {
+                const socket = sockets.get(id)
+                if (socket) socket.end()
+                sockets.delete(id)
+            } else if (type == 2) {
+                const socket = sockets.get(id)
+                if (socket) socket.write(data.slice(2))
+                else ws.send(encodePacket(1, id))
             }
         }
     })

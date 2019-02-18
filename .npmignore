@@ -2,3 +2,5 @@
 !/package*.json
 !/lib/*.js
 !/bin/*
+!/binding.gyp
+!/src/*
