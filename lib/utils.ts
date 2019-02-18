@@ -3,7 +3,7 @@ import { Socket } from "net"
 const binding = <any>require("../build/Release/binding")
 
 export const getOriginalDestination = (socket: Socket): [string, number] => {
-    return binding.getOriginalDest(socket["_handle"].fd)
+    return binding.getOriginalDest((<any>socket)["_handle"].fd)
 }
 
 /*
