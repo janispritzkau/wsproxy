@@ -31,7 +31,7 @@ iptables -t nat -A OUTPUT -p tcp -d <address> --dport <port> -j REDIRECT --to 96
 ```
 
 To redirect the all connections to the proxy, you must avoid for the proxy to connection
-to itself.
+to itself. For that you can create a group `proxy` and allow all outgoing traffic for it.
 
 ```sh
 # redirect all connections to port 9696
