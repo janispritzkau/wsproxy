@@ -3,10 +3,10 @@ import { createServer } from "https"
 import * as WebSocket from "ws"
 import { encodePacket, log } from "./utils"
 
-export default (port: number, ssl?: { cert: string, key: string }) => {
+export default (port: number, host?: string, ssl?: { cert: string, key: string }) => {
     const server = ssl && createServer({ cert: ssl.cert, key: ssl.key })
 
-    const wss = ssl ? new WebSocket.Server({ server }) : new WebSocket.Server({ port })
+    const wss = ssl ? new WebSocket.Server({ server }) : new WebSocket.Server({ host, port })
 
     let nextConnectionId = 0
 
@@ -69,6 +69,6 @@ export default (port: number, ssl?: { cert: string, key: string }) => {
             }
         }
     })
-    if (server) server.listen(port)
-    log("proxy", `Server listening on port ${port}`)
+    if (server) server.listen(port, host)
+    log("proxy", `Server listening on ${host || "0.0.0.0"}:${port}`)
 }

@@ -5,18 +5,19 @@ const fs = require("fs")
 const help = `wsproxy v${version}\n
 Usage:
   - wsproxy server --port 8080
-  - wsproxy server --ssl --cert cert.pem --key key.pem
+  - wsproxy server --ssl --cert localhost.crt --key localhost.key
   - wsproxy client ws://localhost:8080 -p 9696
   - wsproxy client wss://domain.com
 
 wsproxy client <websocket-url> [options]
-  --port, -p       Local port
+  --port, -p       Local port [9696]
 
 wsproxy server [options]
-  --port, -p       Port to listen on
-  --ssl            Enable SSL (https)
-  --cert, -c       SSL certificate
-  --key, -k        SLL private key
+  --port, -p       Port to listen on [80 / 443]
+  --host, -h       Address to use [0.0.0.0]
+  --ssl            Use https
+  --cert, -c       SSL certificate [cert.pem]
+  --key, -k        SLL private key [key.pem]
 `
 
 const showHelp = () => (console.log(help), process.exit(1))
@@ -26,8 +27,9 @@ switch (command) {
     case "server": {
         const [ config ] = parseArgs(args, { port: "p", cert: "c", key: "k" })
         const runServer = require("../lib/server").default
-        console.log("Starting server")
-        runServer(config.port || (config.ssl ? 443 : 80), config.ssl && {
+        const port = config.port || (config.ssl ? 443 : 80)
+
+        runServer(port, config.host, config.ssl && {
             cert: fs.readFileSync(config.cert || "cert.pem"),
             key: fs.readFileSync(config.key || "key.pem")
         })
@@ -37,7 +39,7 @@ switch (command) {
         const [ config, [ address ] ] = parseArgs(args, { port: "p" })
         if (!address) showHelp()
         const runClient = require("../lib/client").default
-        console.log("Starting client")
+
         runClient(address, config.port || 9696)
         break
     }
