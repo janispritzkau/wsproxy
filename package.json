@@ -9,8 +9,7 @@
   },
   "scripts": {
     "install": "node-gyp rebuild",
-    "build": "tsc",
-    "watch": "tsc -w"
+    "prepare": "tsc"
   },
   "bin": "./bin/wsproxy",
   "dependencies": {
