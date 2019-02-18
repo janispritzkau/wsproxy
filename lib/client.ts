@@ -17,10 +17,12 @@ export default async (wsUrl: string, port = 9696) => {
         const id = data.readUInt8(1)
 
         if (type == 1) {
+            // Close connection
             const socket = sockets.get(id)
             if (socket) socket.end()
             sockets.delete(id)
         } else if (type == 2) {
+            // Write data to socket
             const socket = sockets.get(id)
             if (socket) socket.write(data.slice(2))
         }

@@ -31,6 +31,7 @@ export default (port: number, ssl?: { cert: string, key: string }) => {
             const id = data.readUInt8(1)
 
             if (type == 0) {
+                // Build connection
                 const port = data.readUInt16LE(2)
                 const host = data.toString("ascii", 4)
 
@@ -49,10 +50,12 @@ export default (port: number, ssl?: { cert: string, key: string }) => {
                 socket.on("data", data => ws.send(encodePacket(2, id, data)))
                 socket.on("error", err => log("error", `${connectionId} ${err.message}`))
             } else if (type == 1) {
+                // Close connection
                 const socket = sockets.get(id)
                 if (socket) socket.end()
                 sockets.delete(id)
             } else if (type == 2) {
+                // Write data to socket
                 const socket = sockets.get(id)
                 if (socket) socket.write(data.slice(2))
                 else ws.send(encodePacket(1, id))
