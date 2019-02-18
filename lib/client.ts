@@ -4,7 +4,7 @@ import { encodePacket, log, getOriginalDestination } from "./utils"
 
 export default async (wsUrl: string, port = 9696) => {
     const ws = new WebSocket(wsUrl)
-    ws.on("error", err => log("proxy error", err.message))
+    ws.onerror = err => log("proxy error", err.message)
 
     await new Promise(res => ws.onopen = res)
 
@@ -28,7 +28,10 @@ export default async (wsUrl: string, port = 9696) => {
         }
     }
 
-    ws.onclose = () => process.exit()
+    ws.onclose = () => {
+        log("proxy", "Connection closed")
+        process.exit()
+    }
 
     let nextId = 0
 
@@ -61,5 +64,7 @@ export default async (wsUrl: string, port = 9696) => {
         })
 
         socket.on("error", err => log("error", err.message))
-    }).listen(port)
+    }).listen(port, () => {
+        log("proxy", "Listening on port " + port)
+    })
 }

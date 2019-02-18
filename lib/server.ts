@@ -18,6 +18,10 @@ export default (port: number, ssl?: { cert: string, key: string }) => {
 
         log("proxy connect", `${connectionId} ${proxyHost}`)
 
+        ws.onerror = err => {
+            log("proxy error", `${connectionId} ${err.message}`)
+        }
+
         ws.onclose = () => {
             sockets.forEach(socket => socket.end())
             sockets.clear()
@@ -47,7 +51,10 @@ export default (port: number, ssl?: { cert: string, key: string }) => {
                     log("disconnect", `${connectionId} ${host}:${port}`)
                 })
 
-                socket.on("data", data => ws.send(encodePacket(2, id, data)))
+                socket.on("data", data => {
+                    if (ws.readyState != WebSocket.OPEN) return
+                    ws.send(encodePacket(2, id, data))
+                })
                 socket.on("error", err => log("error", `${connectionId} ${err.message}`))
             } else if (type == 1) {
                 // Close connection
@@ -63,4 +70,5 @@ export default (port: number, ssl?: { cert: string, key: string }) => {
         }
     })
     if (server) server.listen(port)
+    log("proxy", `Server listening on port ${port}`)
 }
