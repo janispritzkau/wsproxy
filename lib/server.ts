@@ -10,13 +10,17 @@ export default (port: number, host?: string, ssl?: { cert: string, key: string }
 
     let nextConnectionId = 0
 
-    wss.on("connection", async (ws, { connection: conn }) => {
+    wss.on("connection", async (ws, req) => {
         let sockets: Map<number, Socket> = new Map
 
-        let proxyHost = `${conn.remoteAddress}:${conn.remotePort}`
+        let proxyAddr = req.connection.remoteAddress!
+        if (proxyAddr == "::1" || proxyAddr == "127.0.0.1") {
+            proxyAddr = req.headers['x-forwarded-for'] as string || proxyAddr
+        }
+
         let connectionId = nextConnectionId++
 
-        log("proxy connect", `${connectionId} ${proxyHost}`)
+        log("proxy connect", `${connectionId} ${proxyAddr}`)
 
         ws.onerror = err => {
             log("proxy error", `${connectionId} ${err.message}`)
@@ -25,7 +29,7 @@ export default (port: number, host?: string, ssl?: { cert: string, key: string }
         ws.onclose = () => {
             sockets.forEach(socket => socket.end())
             sockets.clear()
-            log("proxy disconnect", `${connectionId} ${proxyHost}`)
+            log("proxy disconnect", `${connectionId} ${proxyAddr}`)
         }
 
         ws.onmessage = ({ data }) => {
@@ -39,7 +43,7 @@ export default (port: number, host?: string, ssl?: { cert: string, key: string }
                 const port = data.readUInt16LE(2)
                 const host = data.toString("ascii", 4)
 
-                log("connecting", `${connectionId} ${host}:${port}`)
+                log("connect", `${connectionId} ${host}:${port}`)
 
                 const socket = connect({ host, port })
                 sockets.set(id, socket)
@@ -66,6 +70,8 @@ export default (port: number, host?: string, ssl?: { cert: string, key: string }
                 const socket = sockets.get(id)
                 if (socket) socket.write(data.slice(2))
                 else ws.send(encodePacket(1, id))
+            } else if (type == 3) {
+                ws.send(encodePacket(3, id))
             }
         }
     })
