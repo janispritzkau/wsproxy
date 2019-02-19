@@ -14,7 +14,7 @@ export default (port: number, host?: string, ssl?: { cert: string, key: string }
         let sockets: Map<number, Socket> = new Map
 
         let proxyAddr = req.connection.remoteAddress!
-        if (proxyAddr == "::1" || proxyAddr == "127.0.0.1") {
+        if (["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(proxyAddr)) {
             proxyAddr = req.headers['x-forwarded-for'] as string || proxyAddr
         }
 
