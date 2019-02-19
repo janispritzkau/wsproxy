@@ -7,6 +7,7 @@ export default async (wsUrl: string, port = 9696) => {
     ws.onerror = err => log("proxy error", err.message)
 
     await new Promise(res => ws.onopen = res)
+    ws.send(encodePacket(3, 0))
 
     const sockets: Map<number, Socket> = new Map
 
@@ -25,6 +26,10 @@ export default async (wsUrl: string, port = 9696) => {
             // Write data to socket
             const socket = sockets.get(id)
             if (socket) socket.write(data.slice(2))
+        } else if (type == 3) {
+            setTimeout(() => {
+                ws.send(encodePacket(3, (Math.random() * 256) | 0))
+            }, 2000)
         }
     }
 
