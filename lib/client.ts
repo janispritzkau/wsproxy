@@ -57,10 +57,10 @@ export default async (wsUrl: string, port = 9696) => {
         socket.on("data", data => ws.send(encodePacket(2, id, data)))
 
         socket.on("close", () => {
+            log("disconnect", `${host}:${port}`)
             if (!sockets.has(id)) return
             ws.send(encodePacket(1, id))
             sockets.delete(id)
-            log("disconnect", `${host}:${port}`)
         })
 
         socket.on("error", err => log("error", err.message))
