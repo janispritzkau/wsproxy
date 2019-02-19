@@ -49,10 +49,10 @@ export default (port: number, host?: string, ssl?: { cert: string, key: string }
                 sockets.set(id, socket)
 
                 socket.on("close", () => {
+                    log("disconnect", `${connectionId} ${host}:${port}`)
                     if (!sockets.has(id)) return
                     ws.send(encodePacket(1, id))
                     sockets.delete(id)
-                    log("disconnect", `${connectionId} ${host}:${port}`)
                 })
 
                 socket.on("data", data => {
