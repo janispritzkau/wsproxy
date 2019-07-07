@@ -10,14 +10,14 @@ Usage:
   - wsproxy client wss://domain.com
 
 wsproxy client <websocket-url> [options]
-  --port, -p       Local port [9696]
-
+  --port, -p            Local port [9696]
+  --default-addr, -d    Default address
 wsproxy server [options]
-  --port, -p       Port to listen on [80 / 443]
-  --host, -h       Address to use [0.0.0.0]
-  --ssl            Use https
-  --cert, -c       SSL certificate [cert.pem]
-  --key, -k        SLL private key [key.pem]
+  --port, -p            Port to listen on [80 / 443]
+  --host, -h            Address to use [0.0.0.0]
+  --ssl                 Use https
+  --cert, -c            SSL certificate [cert.pem]
+  --key, -k             SLL private key [key.pem]
 `
 
 const showHelp = () => (console.log(help), process.exit(1))
@@ -36,11 +36,11 @@ switch (command) {
         break
     }
     case "client": {
-        const [ config, [ address ] ] = parseArgs(args, { port: "p" })
+        const [ config, [ address ] ] = parseArgs(args, { port: "p", "default-addr": "d" })
         if (!address) showHelp()
         const runClient = require("../lib/client").default
 
-        runClient(address, config.port || 9696)
+        runClient(address, config.port || 9696, config["default-addr"])
         break
     }
     default: console.log(help)

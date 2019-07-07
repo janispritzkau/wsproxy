@@ -2,7 +2,18 @@ import * as WebSocket from "ws"
 import { createServer, Socket } from "net"
 import { encodePacket, log, getOriginalDestination } from "./utils"
 
-export default async (wsUrl: string, port = 9696) => {
+export default async (wsUrl: string, port = 9696, defaultAddr?: string) => {
+    let defaultHost: string | undefined
+    let defaultPort: number | undefined
+    if (defaultAddr && defaultAddr.split(":").length == 2) {
+        defaultHost = defaultAddr.split(":")[0]
+        defaultPort = parseInt(defaultAddr.split(":")[1])
+    }
+
+    if (defaultHost) {
+        log("info", `Default address: ${defaultHost}:${defaultPort}`)
+    }
+
     const ws = new WebSocket(wsUrl)
     ws.onerror = err => log("proxy error", err.message)
 
@@ -41,7 +52,13 @@ export default async (wsUrl: string, port = 9696) => {
     let nextId = 0
 
     createServer(socket => {
-        const [host, port] = getOriginalDestination(socket)
+        let host: string, port: number
+        try {
+            [host, port] = getOriginalDestination(socket)
+        } catch {
+            if (!defaultHost || !defaultPort) return socket.destroy()
+            host = defaultHost, port = defaultPort
+        }
 
         log("connect", `${host}:${port}`)
 
